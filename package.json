@@ -10,6 +10,7 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "security:audit": "node scripts/audit-npm-bulk.mjs --audit-level high",
+    "generated:check": "node --test scripts/validate-generated-check-bootstrap.test.mjs && pnpm --filter '@usebrick/core' build && pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check && pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-catalog.ts --check && pnpm --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check && pnpm --filter slopbrick exec node --import tsx scripts/generate-mcp-docs.ts",
     "plans:validate": "node scripts/validate-execution-docs.mjs",
     "positioning:validate": "node --test scripts/validate-positioning-docs.test.mjs",
     "scan": "node packages/slopbrick/bin/slopbrick.js scan",

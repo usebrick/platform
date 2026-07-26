@@ -60,13 +60,10 @@ jobs:
           pnpm plans:validate
 
       - name: Check generated documentation and registries before build
-        # Build/test regenerate some artifacts. Check the committed bytes first
-        # so CI cannot silently repair a stale generated file and then pass.
-        run: |
-          pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check
-          pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-catalog.ts --check
-          pnpm --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check
-          pnpm --filter slopbrick exec node --import tsx scripts/generate-mcp-docs.ts
+        # The shared command builds private Core before loading downstream
+        # generators, then checks the committed bytes before SlopBrick's build
+        # can regenerate them. Pre-push uses the same clean-checkout contract.
+        run: pnpm generated:check
 
       - name: Build all packages
         # `pnpm -r build` respects workspace dep order: core first (no

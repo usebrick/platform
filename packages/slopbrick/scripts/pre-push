@@ -72,11 +72,12 @@ echo
 echo "[pre-push] 4/7: recursive build"
 "${PNPM[@]}" -r build
 
-# Step 5: generated registry and language support drift checks.
+# Step 5: clean-checkout generated-artifact contract. Keep this delegated to
+# the same root command as CI so a long-lived local Core build cannot mask a
+# missing workspace bootstrap or a generated-surface coverage gap.
 echo
-echo "[pre-push] 5/7: generated registry/language checks"
-"${PNPM[@]}" --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check
-"${PNPM[@]}" --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check
+echo "[pre-push] 5/7: generated artifact checks"
+"${PNPM[@]}" generated:check
 
 # Step 6: dependency security audit. pnpm's legacy audit endpoint is retired,
 # so use the repository's npm bulk-advisory adapter instead of treating HTTP
