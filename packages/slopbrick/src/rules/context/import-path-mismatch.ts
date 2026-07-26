@@ -135,20 +135,8 @@ export const importPathMismatchRule = createRule<RuleContext & { allowedPrefixes
       );
       const importRewrites = context.config.mend?.importRewrites;
       const replacement = importRewrites
-        && Object.prototype.hasOwnProperty.call(importRewrites, source)
+        && Object.hasOwn(importRewrites, source)
         ? importRewrites[source]
-        : undefined;
-      const fix = evidence?.status === 'exact'
-        && typeof replacement === 'string'
-        && replacement !== source
-        && prefixes.some((prefix) => replacement.startsWith(prefix))
-        ? {
-            kind: 'module-specifier' as const,
-            description: `Rewrite import '${source}' to '${replacement}'`,
-            targetFile: context.filePath,
-            oldValue: source,
-            newValue: replacement,
-          }
         : undefined;
 
       issues.push({
@@ -161,7 +149,18 @@ export const importPathMismatchRule = createRule<RuleContext & { allowedPrefixes
         column: imp.column,
         advice: `Use one of the canonical import paths: ${prefixes.join(', ')}. If '${source}' should be allowed, update slopbrick.config.mjs#allowedImports.`,
         evidence,
-        ...(fix ? { fix } : {}),
+        fix: evidence?.status === 'exact'
+          && typeof replacement === 'string'
+          && replacement !== source
+          && prefixes.some((prefix) => replacement.startsWith(prefix))
+          ? {
+              kind: 'module-specifier',
+              description: 'Apply the exact repository-owned import rewrite',
+              targetFile: context.filePath,
+              oldValue: source,
+              newValue: replacement,
+            }
+          : undefined,
       });
     }
 
