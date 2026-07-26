@@ -70,11 +70,54 @@ Core; only the workspace orchestration belongs at the repository root.
 
 ## Acceptance Criteria
 
-- [ ] The regression contract passes.
-- [ ] The root generated check passes with no pre-existing Core `dist`.
-- [ ] Node 22 and Node 24 CI complete from a clean checkout.
-- [ ] Recursive typecheck, test, build, and security gates remain green.
+- [x] The regression contract passes.
+- [x] The root generated check passes with no pre-existing Core `dist`.
+- [x] Node 22 and Node 24 CI complete from a clean checkout.
+- [x] Recursive typecheck, test, build, and security gates remain green.
 
 ## Resolution
 
-<!-- filled in after validation -->
+The clean-checkout bootstrap and every later hosted-runner failure are closed.
+The root `generated:check` command now owns one fail-fast contract: validate its
+own orchestration, build private Core and Engine, then check the rule registry,
+rule catalog, language-support matrix, and MCP documentation before any normal
+package build can regenerate committed bytes. Push CI, release CI, and the
+main-branch pre-push hook all delegate to that command.
+
+The first clean hosted reruns exposed four independent portability assumptions,
+which were corrected without weakening the product gate:
+
+- CI, publish, and pre-push use a one-worker SlopBrick Vitest budget; hosted
+  CI and publish also serialize workspace package tests.
+- the worker pool prefers existing bundled workers from both source and bundle
+  entry points and removes inherited `tsx` loader flags only when starting a
+  built JavaScript worker;
+- package-wrapper JSON parsing tolerates a trailing GitHub `::endgroup::`
+  marker, and the large-JSON fixture remains above 128 KiB on Linux as well as
+  macOS; and
+- watch health publication has bounded hosted-runner headroom and failure
+  diagnostics, while policy-sensitive fixtures opt into or assert the exact
+  current-policy rule they are intended to test.
+
+The incident chain is checkpointed by `faa788137`, `5b3857561`, `88d8700a7`,
+`c8fbf7059`, `496374655`, `2358c19b0`, `3d17a5fcc`, and final correction
+`ffb196d00fbb6d467a078374eb7583a6a3f3186`.
+
+Final verification:
+
+- the local recursive typecheck, test, and build gate passed;
+- the protected pre-push hook passed all seven release-equivalent stages;
+- GitHub Actions run
+  [`30192189009`](https://github.com/usebrick/platform/actions/runs/30192189009)
+  passed build/test/schema jobs on Node 24 and Node 22, the production
+  dependency security audit, and packed-consumer jobs on both Node versions;
+- hosted test totals were Core 289, Website 54, Engine 150, and SlopBrick 4,647
+  passed with 18 intentional SlopBrick skips; and
+- the high-threshold audit checked 377 production packages with zero
+  advisories.
+
+GitHub emitted a non-blocking warning that the currently pinned checkout,
+setup-node, and pnpm setup actions declare a deprecated Node 20 action runtime
+and are being forced onto Node 24. That maintenance warning did not affect the
+green run and requires a separately reviewed action-SHA update; it is not part
+of this bug's release authority.

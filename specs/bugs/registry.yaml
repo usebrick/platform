@@ -39,5 +39,9 @@ bugs:
     severity: low
     priority: P0
     scope: ci-generated-check-bootstrap
+    status: resolved
+    resolved_at: 2026-07-26
+    resolution_commit: ffb196d00fbb6d467a078374eb7583a6a3f3186
+    verification_run: 30192189009
     summary: Clean CI cannot run SlopBrick generated checks before Core is built
     file: specs/bugs/BUG-2026-07-26T052118-ci-generated-check-bootstrap.md

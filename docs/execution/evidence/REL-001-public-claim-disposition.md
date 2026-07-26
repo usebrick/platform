@@ -4,7 +4,8 @@
 **Owner:** repository owner / release maintainer
 **Recorded release/deployment actions:** none
 **Recorded source integration:** Revision 82 source-only integration of
-`3170a90d592b9a2a471744a9523ced5e02eb6107`
+`3170a90d592b9a2a471744a9523ced5e02eb6107`, with Revision 83 clean-runner
+closure at `ffb196d00fbb6d467a078374eb7583a6a3f3186`
 
 ## Reason for existence
 
@@ -19,8 +20,13 @@ roadmap status never substitute for the decisions below.
 - Qualified source checkpoint:
   `3170a90d592b9a2a471744a9523ced5e02eb6107`.
 - Revision 82 integrates that checkpoint into `main` as source only. The
-  Revision 82 receipt commit is the remote push target and must contain the
-  qualified checkpoint in its ancestry.
+  Revision 83 CI-qualified source checkpoint
+  `ffb196d00fbb6d467a078374eb7583a6a3f3186` contains it in ancestry and is the
+  current remote `main` target.
+- GitHub Actions run
+  [`30192189009`](https://github.com/usebrick/platform/actions/runs/30192189009)
+  passed Node 22 and Node 24 build/test/schema jobs, the production dependency
+  security audit, and packed consumers on both versions.
 - Tag, GitHub Release, npm publication, and website deployment from that
   integration: none.
 - Website read-only check on 2026-07-22: copy aligns on published/candidate
@@ -55,6 +61,6 @@ corepack pnpm security:audit
 git diff --check
 ```
 
-The audit command currently exits zero. Source integration does not change the
-public package or deployed website. It clears only the technical audit
-precondition for this checkout; npm and website actions remain unauthorized.
+The audit command currently exits zero. Source integration and hosted CI do not
+change the public package or deployed website. They clear only the technical
+gate for this checkout; npm and website actions remain unauthorized.

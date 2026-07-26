@@ -3,6 +3,41 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 83 — 2026-07-26
+
+### Clean-checkout and hosted CI closure
+
+- Closed `BUG-2026-07-26T052118` across the complete clean-runner chain. One
+  root `generated:check` contract now validates its own orchestration, builds
+  private Core and Engine, and checks all four SlopBrick generated surfaces
+  before package builds can rewrite committed bytes. Push CI, publish CI, and
+  main-branch pre-push delegate to that same ordering.
+- Removed the remaining hosted-only assumptions: CI and publish now use the
+  release-equivalent one-worker SlopBrick budget; worker startup prefers built
+  artifacts and does not leak a parent `tsx` loader into JavaScript workers;
+  wrapped machine output and Linux-sized JSON are covered; watch health waits
+  are bounded and diagnostic; and two stale fixtures now name the exact
+  current-policy rules they exercise.
+- Recorded implementation checkpoints `3d17a5fcc55caf50e881a9b993793c49ccdae150`
+  and `ffb196d00fbb6d467a078374eb7583a6a3f3186`. The protected pre-push gate
+  passed all seven stages, and hosted CI run `30192189009` passed Node 24,
+  Node 22, the production dependency security audit, and packed consumers on
+  both versions.
+- Hosted totals are Core 289, Website 54, Engine 150, and SlopBrick 4,647
+  passed tests with 18 intentional SlopBrick skips. The high-threshold audit
+  checked 377 production packages with zero advisories.
+
+### Boundary
+
+- This revision hardens and verifies the existing source-only integration. It
+  changes no product role, roadmap priority, package version, public package,
+  deployed website, corpus admission state, external-validation count, or
+  release authority. Tag, GitHub Release, npm publication, and website
+  deployment remain unauthorized under `REL-001`.
+- GitHub's non-blocking warning about pinned actions declaring a deprecated
+  Node 20 action runtime is recorded as separate maintenance debt. Any action
+  update requires review of exact replacement SHAs and is not inferred here.
+
 ## Revision 82 — 2026-07-26
 
 ### Qualified source integration
