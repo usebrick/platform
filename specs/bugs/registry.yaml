@@ -34,3 +34,10 @@ bugs:
     scope: core-slopbrick-declaration-boundary
     summary: Core Zod schema type leaks into SlopBrick declaration bundling
     file: specs/bugs/BUG-2026-07-25T223900-zod-declaration-boundary.md
+  - bug_id: BUG-2026-07-26T052118
+    date: 2026-07-26
+    severity: low
+    priority: P0
+    scope: ci-generated-check-bootstrap
+    summary: Clean CI cannot run SlopBrick generated checks before Core is built
+    file: specs/bugs/BUG-2026-07-26T052118-ci-generated-check-bootstrap.md
