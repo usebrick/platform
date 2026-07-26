@@ -3,6 +3,37 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 82 — 2026-07-26
+
+### Qualified source integration
+
+- Recorded the owner's instruction to continue the recommended integration as
+  authority for a source-only fast-forward of `main`. The qualified source and
+  security checkpoint is
+  `3170a90d592b9a2a471744a9523ced5e02eb6107`; the Revision 82 receipt commit
+  carries the synchronized roadmap, architecture, plans, status, and evidence
+  updates.
+- Re-ran the full local integration gate before the push target was created:
+  recursive lint/typecheck/build passed; Core 289, Engine 150, Website 54, and
+  SlopBrick 4,643 tests passed with 18 intentional SlopBrick skips; Core schema
+  fixtures, generated artifacts, execution docs, positioning contracts, and
+  the packed consumer passed.
+- Recorded a fresh security review over the complete integration range. The
+  production audit checked 377 packages with zero high-threshold advisories,
+  and the package-local no-telemetry self-scan passed at Repository Health
+  99.94/100 with no high findings.
+- Updated current product surfaces to distinguish source-integrated capability
+  code from shipped package and deployed website state. Historical narrow
+  owner-decision records remain unchanged as point-in-time evidence.
+
+### Boundary
+
+- This revision authorizes and records source integration only. It creates no
+  tag, GitHub Release, npm publication, website deployment, participant
+  contact, external validation claim, team-value claim, pricing evidence, or
+  additional Memory, Lock, or Mend scope. `REL-001` remains
+  `waiting_external` for independent npm and website dispositions.
+
 ## Revision 81 — 2026-07-26
 
 ### MEND-001 owner acceptance and closeout

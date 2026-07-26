@@ -84,8 +84,9 @@ filesystem acquisition, and evaluates one pinned exact offline vector.
 Revision 69 locally qualifies the private Slice A profile/parser work;
 Revision 70 authorized private Slice B compiler/projection work, Revision 71
 records its green local receipt, Revision 72 authorized Slice C, and Revision
-73 records the complete private M0 local receipt. Revision 74 authorizes one
-local checkpoint commit only. That M0 proves only
+73 records the complete private M0 local receipt. Revision 74 authorized one
+local checkpoint commit only; Revision 82 separately source-integrates that
+accepted checkpoint without extracting a package. That M0 proves only
 deterministic local fixture conformance; it
 would not satisfy the two-consumer extraction gate or authorize a source
 parser, filesystem adapter, or live agent experiment.

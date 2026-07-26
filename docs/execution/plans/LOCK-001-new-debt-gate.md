@@ -4,7 +4,7 @@
 - **Priority:** 10
 - **Track / lane:** implementation / lock
 - **Owner:** SlopBrick and UseBrick platform
-- **Updated:** 2026-07-25
+- **Updated:** 2026-07-26
 
 ## Outcome
 
@@ -19,8 +19,9 @@ The unreleased workspace candidate now implements one bounded Lock workflow
 inside `slopbrick ci`. Repository-authored `allowedImports` policy, exact
 import evidence, semantic finding identity, the reviewed durable baseline,
 owned expiring waivers, incomplete-scan failure, and typed decision receipts
-operate as one local enforcement loop. The capability is still unshipped and
-unpackaged as a separate product.
+operate as one enforcement loop. Revision 82 source-integrates the qualified
+proof into `main`; the capability is still unshipped and unpackaged as a
+separate product.
 The initial buyer hypothesis is AI-native teams and agencies with roughly
 5–100 developers, but no external workflow or price evidence exists.
 Lock is the first paid-layer hypothesis because it turns trusted SlopBrick
@@ -29,9 +30,11 @@ it is not a separate marketed product.
 
 `SB-UX-001` is complete, so this plan's required first-scan and stable
 finding-delta boundary is satisfied. The owner's 2026-07-25 instruction to
-continue `LOCK-001` explicitly starts this bounded local plan. It does not
-establish paid demand or authorize push, release, publication, deployment, or
-external participant work.
+continue `LOCK-001` explicitly started this bounded local plan. That
+instruction did not establish paid demand or authorize remote or public
+action. Revision 82 is the later, separate source-integration authority; it
+still does not authorize release, publication, deployment, or external
+participant work.
 
 The owner-controlled scenario matrix and complete project qualification are
 recorded in the evidence receipt. `LOCK-001` closes only as a deterministic
@@ -97,12 +100,12 @@ remain unmeasured.
 
 ## Verification
 
-The focused Lock matrix passes 75/75. Recursive typecheck, tests, and build
-pass; the complete SlopBrick suite records 4,616 passes and 18 intentional
-skips. The production audit reports zero high-threshold advisories across 377
-packages, the runtime import graph has zero cycles across 654 source files,
-and the package-local self-scan is complete at 307/307 with a passing policy
-gate. Exact scenarios and claim boundaries are in the owner receipt.
+The focused Lock matrix passes 75/75. Revision 82's source-integration gate
+records green recursive lint, typecheck, tests, and build; the complete
+SlopBrick suite records 4,643 passes and 18 intentional skips. The production
+audit reports zero high-threshold advisories across 377 packages, and the
+package-local self-scan passes at Repository Health 99.94/100. Exact scenarios
+and claim boundaries are in the owner receipt.
 
 ## Evidence destination
 
@@ -115,8 +118,7 @@ and decision receipts so the failure can be reproduced.
 
 ## Next action
 
-Preserve the qualified local gate and ask the owner for an explicit usefulness
-disposition before `MEND-001`: accept and select one deterministic repair,
-revise Lock against a named reproducible failure, or hold repair work. Keep
-package extraction, external validation, pricing, push, release, publication,
-and deployment separately gated.
+Preserve the accepted, source-integrated gate and its exact import-policy
+authority. `MEND-001` has completed the separately accepted MEND 1 proof; do
+not infer another repair. Keep package extraction, external validation,
+pricing, release, publication, and deployment separately gated.

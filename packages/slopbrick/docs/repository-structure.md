@@ -204,7 +204,8 @@ private Slice A profile/parser implementation, Revision 70 authorized private
 Slice B compiler/projection work, Revision 71 records that slice's green local
 receipt, Revision 72 authorized Slice C, and Revision 73 records the complete
 private M0 local receipt. Revision 74 records one owner-authorized local
-checkpoint commit; all three slices remain unshipped.
+checkpoint commit; Revision 82 separately source-integrates all three slices.
+They remain private and unshipped.
 Any filesystem adapter, source parser, durable store, or live experiment needs
 separate authority.
 

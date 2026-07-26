@@ -2,9 +2,11 @@
 
 - **Date:** 2026-07-25
 - **Branch:** `codex/lock-001-new-debt`
+- **Qualified source checkpoint:**
+  `3170a90d592b9a2a471744a9523ced5e02eb6107`
 - **Workspace candidate:** unreleased `slopbrick@0.45.0`
-- **Disposition:** local implementation proof complete; unshipped and not
-  team-validated
+- **Disposition:** implementation proof complete and source-integrated under
+  Revision 82; unshipped and not team-validated
 
 ## What this receipt proves
 
@@ -107,10 +109,11 @@ records are retained under `specs/bugs/`.
 `done`. The team-enforcement and monetization gates remain open because the
 repository owner is still the only tester and external sessions remain zero.
 
-`MEND-001` remains parked even though its plan dependency is now complete. Its
-separate resume gate requires the owner to accept this enforcement behavior as
-useful and select one deterministic repair worth evaluating with dry-run,
-idempotence, rescan, repository checks, and byte-identical rollback.
+At this receipt's original closeout, `MEND-001` remained parked pending a
+separate owner decision. The owner later accepted the Lock workflow, selected
+one repair, and accepted the corrected MEND 1 proof. Revision 82
+source-integrates both proofs; it does not establish team usefulness or widen
+Lock authority.
 
 ## Rollback
 

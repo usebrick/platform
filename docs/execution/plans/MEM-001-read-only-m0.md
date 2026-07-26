@@ -4,7 +4,7 @@
 - **Priority:** 9
 - **Track / lane:** implementation / memory
 - **Owner:** UseBrick platform
-- **Updated:** 2026-07-25
+- **Updated:** 2026-07-26
 
 ## Outcome
 
@@ -220,8 +220,9 @@ performance timing assertions, each passing alone. The exact timing evidence
 and final 4,601-pass/18-skip aggregate are preserved in the Slice C receipt;
 no unrelated scanner code was changed.
 
-The combined private M0 is locally checkpointed under the Revision 74 owner
-decision and remains unpushed, unmerged, and unshipped.
+The combined private M0 was locally checkpointed under the Revision 74 owner
+decision. Revision 82 separately source-integrates that accepted checkpoint
+into `main`. It remains private and unshipped.
 
 ## Evidence destination
 
@@ -260,6 +261,7 @@ has no user data or run artifacts to delete.
 
 ## Next action
 
-Preserve the owner-authorized local MEM-001 checkpoint and return to the owner
-before any push, merge, tag, release, publication, deployment, filesystem
-acquisition, source-code parsing, durable Memory, or live experiment.
+Preserve the source-integrated private MEM-001 checkpoint. Do not infer a
+package, public export, tag, release, publication, deployment, filesystem
+acquisition, source-code parsing, durable Memory, or live experiment from the
+source integration.

@@ -4,7 +4,7 @@
 - **Priority:** 16
 - **Track / lane:** implementation / release
 - **Owner:** repository owner / release maintainer
-- **Updated:** 2026-07-25
+- **Updated:** 2026-07-26
 
 ## Outcome
 
@@ -28,11 +28,13 @@ first network wording, and capability ladder. That resolves the older copy-
 drift observation only. The deployed commit identity remains unverified, and
 no future deployment or npm authority is inferred.
 
-The current high-severity dependency audit is green after the reviewed
-workspace dependency cleanup: 377 production packages were checked with zero
+Revision 82 separately source-integrates qualified checkpoint
+`3170a90d592b9a2a471744a9523ced5e02eb6107` into `main`. This is a branch/source
+action, not an npm release or website deployment. The current high-severity
+dependency audit is green: 377 production packages were checked with zero
 advisories at the high threshold. That clears the recorded technical audit
 blocker but does not supply either owner disposition or authorize a public
-action.
+release or deployment action.
 
 ## Scope
 
@@ -114,11 +116,12 @@ from the result.
   `authorize` with exact commit and tag) and website (`hold`, or `authorize`
   with exact commit/SHA).
 - **Owner:** repository owner / release maintainer.
-- **Last verified:** 2026-07-22; the live copy was read-only checked and found
-  aligned, while deployed SHA remained unknown. The last recorded source
-  integration had `main` and `origin/main` converged at
-  `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6`; no tag, GitHub Release, npm
-  publish, or separately authorized website deployment was inferred.
+- **Last verified:** 2026-07-26; qualified source checkpoint
+  `3170a90d592b9a2a471744a9523ced5e02eb6107` passed the full local gate and is
+  integrated under Revision 82. The 2026-07-22 live copy check remains the
+  latest website evidence; deployed SHA remains unknown. No tag, GitHub
+  Release, npm publish, or separately authorized website deployment is
+  inferred from source integration.
 - **Evidence:** `docs/execution/evidence/SB-045-release-qualification.md` proves
   local qualification; `docs/execution/evidence/REL-001-public-claim-disposition.md`
   records the still-unresolved public decisions.
@@ -140,7 +143,7 @@ to an exact reviewed deployment and record that action in the receipt.
 
 ## Next action
 
-Await the two explicit owner dispositions. Keep npm publication and
-website deployment unauthorized while local roadmap work continues, and rerun
-the currently green dependency audit against any exact authorized npm
-candidate.
+Preserve the source integration and await the two explicit owner dispositions.
+Keep npm publication and website deployment unauthorized while roadmap work
+continues, and rerun the currently green dependency audit against any exact
+authorized npm candidate.

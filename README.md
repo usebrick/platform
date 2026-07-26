@@ -21,9 +21,9 @@ hypothesis has not yet been collected.
 | --- | --- | --- |
 | **UseBrick** | The quality, coherence, and verification product and repository-owned contract | Sole customer-facing product |
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
-| **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C locally qualified, locally checkpointed, and unshipped; no new package, adapter, or store is authorized |
-| **Lock capability** | Prevent newly introduced verified drift with approved policy | One import-policy family is locally qualified in the unreleased v0.45 CLI; paid/team value remains unproven |
-| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | One exact import-rewrite proof is corrected, locally qualified, and owner-accepted as MEND 1; no general refactoring authority exists |
+| **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C are qualified and source-integrated in the unreleased workspace; no new package, adapter, or store is authorized |
+| **Lock capability** | Prevent newly introduced verified drift with approved policy | One import-policy family is qualified and source-integrated in the unreleased v0.45 CLI; paid/team value remains unproven |
+| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | One exact import-rewrite proof is corrected, qualified, owner-accepted as MEND 1, and source-integrated; no general refactoring authority exists |
 | **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
 | **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
 
@@ -40,8 +40,7 @@ Current Memory decision work is tracked by
 [`MEM-001`](./docs/execution/plans/MEM-001-read-only-m0.md). Its
 [M0 ADR](./docs/decisions/memorybrick-m0.md) and focused
 [requirement-to-test contract](./docs/decisions/memorybrick-m0-acceptance.md)
-now have a locally qualified and locally checkpointed private Slice A-C
-implementation;
+now have a qualified and source-integrated private Slice A-C implementation;
 pinned [registry v2](./docs/decisions/memorybrick-m0-registry-v2.json)
 and exact [benchmark vector
 v2](./docs/decisions/memorybrick-m0-benchmark-vector-v2.json) are fixed test
@@ -58,7 +57,9 @@ authorized Slice B, Revision 71 records its green local receipt, and Revision
 72 authorized Slice C. Revision 73 records the complete private M0 local
 receipt after focused Node 22/24 checks, exact-vector reconstruction, targeted
 review, and bounded workspace qualification. Revision 74 records the owner's
-authorization for one local checkpoint commit only. This is deterministic
+authorization for one local checkpoint commit only. Revision 82 separately
+records source integration of that accepted checkpoint while preserving the
+unpublished package and undeployed website boundaries. This is deterministic
 local fixture conformance only, not agent efficacy or a shipped Memory product. Current
 state and full history live exclusively in the
 [execution index](./docs/execution/index.json),
@@ -87,7 +88,9 @@ byte-identical internal rollback. It does not infer replacements, expose a
 public rollback command, authorize another repair family, or establish
 shipped/team value. Revision 81 records **Accept MEND 1** and closes the
 [corrected Mend receipt](./docs/execution/evidence/MEND-001-repair-proof.md)
-without authorizing another repair family.
+without authorizing another repair family. Revision 82 integrates the accepted
+Memory, Lock, and Mend source into `main`; it creates no tag, GitHub Release,
+npm publication, website deployment, participant action, or market claim.
 
 AI slop and repository memory solve different halves of one problem. Slop is
 the visible inconsistency; context loss is one major cause. Memory learns one

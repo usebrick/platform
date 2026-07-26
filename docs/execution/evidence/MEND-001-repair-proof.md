@@ -2,9 +2,11 @@
 
 - **Date started:** 2026-07-26
 - **Branch:** `codex/lock-001-new-debt`
+- **Qualified source checkpoint:**
+  `3170a90d592b9a2a471744a9523ced5e02eb6107`
 - **Workspace candidate:** unreleased `slopbrick@0.45.0`
-- **Disposition:** owner accepted as **MEND 1** on 2026-07-26; locally
-  qualified, unshipped, and scope-closed
+- **Disposition:** owner accepted as **MEND 1** on 2026-07-26; qualified and
+  source-integrated under Revision 82, unshipped, and scope-closed
 
 ## Owner decision
 
@@ -117,7 +119,8 @@ does not expose rollback as a public command.
 
 ## Remaining boundary
 
-Push, merge, tag, npm publication, website deployment, broader Mend repairs,
-team usefulness, demand, and pricing remain unapproved and unproven. Owner
-acceptance closes only this exact local proof. A second repair family requires
-a separate plan and explicit owner authority.
+Source integration is complete under Revision 82. Tagging, GitHub Release, npm
+publication, website deployment, broader Mend repairs, team usefulness,
+demand, and pricing remain unapproved and unproven. Owner acceptance closes
+only this exact proof. A second repair family requires a separate plan and
+explicit owner authority.

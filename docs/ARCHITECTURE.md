@@ -28,10 +28,10 @@ status and dependency edges live in
 | --- | --- | --- |
 | **UseBrick** | Repository-owned quality, coherence, and verification contract | Sole customer-facing product |
 | **SlopBrick** | Detect visual, frontend, code, and repository slop; emit evidence, scores, artifacts, MCP, and CI primitives | Shipped npm package, current CLI, free scanner, and acquisition surface |
-| **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Private four-fact M0 locally qualified and unshipped; broader adapters/store remain gated |
+| **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Private four-fact M0 qualified and source-integrated but unshipped; broader adapters/store remain gated |
 | **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
-| **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | One import-policy family locally qualified in the unreleased CLI; team and paid value remain unproven |
-| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is corrected, locally qualified, and owner-accepted as MEND 1; no arbitrary repository-wide AI refactoring |
+| **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | One import-policy family qualified and source-integrated in the unreleased CLI; team and paid value remain unproven |
+| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is corrected, qualified, owner-accepted as MEND 1, and source-integrated; no arbitrary repository-wide AI refactoring |
 | **RenderBrick Labs** | Compare source-only analysis with screenshots and runtime evidence | Draft benchmark only; not a browser product, package, or proven customer capability |
 
 The Memory capability is not vendor-owned chat history, a transcript archive,
@@ -88,13 +88,13 @@ the architectural moat.
   corrected and locally requalified in the unreleased CLI with parser-owned
   source-span evidence, config-aware preview/apply parity, staged atomic
   publication, failed-staging no-mutation, clean rescan, no-op replay, and
-  byte-identical rollback; Revision 81 accepts this exact proof, which remains
-  unshipped, scope-closed, and non-general.
-- Private Memory M0: complete local Slices A-C fixture-conformance proof;
-  unshipped and unchanged Structure v5.
-- LOCK-001: complete local owner-only proof for explicit
-  `ci --lock-new-debt` over one repository import-policy family; unshipped and
-  not team-validated.
+  byte-identical rollback; Revision 81 accepts this exact proof and Revision 82
+  source-integrates it. It remains unshipped, scope-closed, and non-general.
+- Private Memory M0: complete Slices A-C fixture-conformance proof,
+  source-integrated under Revision 82; unshipped and unchanged Structure v5.
+- LOCK-001: complete owner-only proof for explicit `ci --lock-new-debt` over
+  one repository import-policy family, source-integrated under Revision 82;
+  unshipped and not team-validated.
 
 ## Monorepo boundaries
 
@@ -344,8 +344,8 @@ registered root/package JSON bytes
 future live agents and Lock policy require separate ADRs
 ```
 
-`MEM-001` has locally qualified and locally checkpointed the complete private
-M0 across Slices A-C. Revision 68 makes its focused
+`MEM-001` has qualified the complete private M0 across Slices A-C and Revision
+82 source-integrates that checkpoint. Revision 68 makes its focused
 [requirement-to-test contract](./decisions/memorybrick-m0-acceptance.md) the
 sole active behavioral authority under the accepted
 [M0 ADR](./decisions/memorybrick-m0.md). Pinned
@@ -362,8 +362,9 @@ Revision 69 records the owner's **Accept Slice A** decision and green local
 profile/parser receipt. Revision 70 separately authorized the private
 compiler/projection Slice B, Revision 71 records its green local receipt,
 Revision 72 authorized preview/exact-vector Slice C, and Revision 73 records
-the complete local M0 receipt. Revision 74 authorizes exactly one local
-checkpoint commit and no remote or public action. The proof is deterministic
+the complete local M0 receipt. Revision 74 authorized exactly one local
+checkpoint commit and no remote or public action by itself; Revision 82 is the
+separate source-integration authority. The proof is deterministic
 local fixture conformance only. Any filesystem adapter, source parser, live agent, durable
 store, or live outcome evaluation needs separate authority.
 

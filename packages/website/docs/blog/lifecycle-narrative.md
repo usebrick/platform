@@ -83,9 +83,9 @@ These three changes are not features. They are evidence that the lifecycle is op
 |-------|----------------------|------------------|
 | Define | **PickBrick** (the Constitution) | Policy initialization and approved intent are part of UseBrick onboarding, not another package |
 | Detect | **SlopBrick** (the scanner) | Shipped as `slopbrick@0.20.0` when this article was written; the verified current public release is governed by the root roadmap and release receipt |
-| Preserve and compile | **MemoryBrick** | Planned repository-owned context capability; complete private M0 Slices A-C are locally qualified, locally checkpointed, and unshipped, proving only deterministic local fixture conformance with no source parser, store, or live agent |
-| Prevent | **LockBrick** (the CI gate) | One import-policy family locally qualified in the unreleased CLI; unshipped and not team-validated |
-| Repair | **MendBrick** (the migrator) | One exact local import-rewrite proof owner-accepted as MEND 1; scope closed and broader repair separately gated |
+| Preserve and compile | **MemoryBrick** | Planned repository-owned context capability; complete private M0 Slices A-C are qualified and source-integrated but unshipped, proving only deterministic local fixture conformance with no source parser, store, or live agent |
+| Prevent | **LockBrick** (the CI gate) | One import-policy family qualified and source-integrated in the unreleased CLI; unshipped and not team-validated |
+| Repair | **MendBrick** (the migrator) | One exact import-rewrite proof is owner-accepted as MEND 1 and source-integrated; scope closed and broader repair separately gated |
 | Verify runtime | **Render Labs** | Benchmark-only Labs experiment; no browser or rendered-evidence product claim |
 
 At publication, only the Detect stage was described as productionized. That historical boundary still matters: the Constitution format already shipped inside SlopBrick, and the current unreleased candidate has one local Lock proof, but neither fact authorizes marketing each capability, creating another package, or claiming team demand.

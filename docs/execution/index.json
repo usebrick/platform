@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 81,
+  "revision": 82,
   "updatedAt": "2026-07-26",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -300,7 +300,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the owner-authorized local MEM-001 checkpoint and return to the owner before any push, merge, tag, release, publication, deployment, or broader Memory capability.",
+        "text": "Preserve the source-integrated private MEM-001 checkpoint; do not infer a package, public export, release, deployment, filesystem adapter, source parser, durable store, or broader Memory capability.",
         "verify": "corepack pnpm --filter @usebrick/engine exec vitest run tests/memory-m0-renderer.test.ts tests/memory-m0-vector.test.ts --maxWorkers=1 --minWorkers=1 && corepack pnpm --filter @usebrick/engine typecheck",
         "evidencePath": "docs/execution/evidence/MEM-001-local-commit-owner-decision.json"
       },
@@ -346,7 +346,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the qualified local Lock gate and hand only its exact import-policy finding contract to the owner-approved MEND-001 proof.",
+        "text": "Preserve the accepted, source-integrated Lock gate and its exact import-policy authority without widening blocking, package, team, or pricing claims.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/ci.test.ts tests/cli/debt-baseline-atomic.test.ts tests/cli/lock-new-debt.test.ts tests/cli/new-debt-gate.test.ts tests/config/lock-config.test.ts tests/config/lock-policy-source.test.ts tests/engine/cache.test.ts tests/rules/import-path-mismatch.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/LOCK-001-owner-validation.md"
       },
@@ -376,7 +376,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the owner-accepted Revision 80 exact import-rewrite proof and reopen Mend only for a demonstrated regression or a separately planned and explicitly authorized repair family.",
+        "text": "Preserve the owner-accepted, source-integrated Revision 80 exact import-rewrite proof and reopen Mend only for a demonstrated regression or a separately planned and explicitly authorized repair family.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/engine/dispatch.test.ts tests/engine/visitor.test.ts tests/engine/react-visitor.test.ts tests/config/mend-import-rewrites.test.ts tests/fix/import-rewrite.test.ts tests/fix/index.test.ts tests/rules/import-path-mismatch.test.ts tests/report/advice.test.ts tests/report/unified-diff.test.ts tests/cli/mend-import-rewrite.test.ts tests/rules/quality-authority-copy.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/MEND-001-repair-proof.md"
       },
@@ -522,7 +522,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Await explicit owner dispositions for npm and website, keep public actions blocked, and rerun the currently green dependency audit against any exact release candidate.",
+        "text": "Preserve Revision 82 source integration, await explicit owner dispositions for npm and website, keep release and deployment actions blocked, and rerun the currently green dependency audit against any exact release candidate.",
         "verify": "corepack pnpm security:audit",
         "evidencePath": "docs/execution/evidence/REL-001-public-claim-disposition.md"
       },

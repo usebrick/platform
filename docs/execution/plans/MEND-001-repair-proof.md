@@ -25,8 +25,9 @@ complete. Revision 80 supersedes Revision 79's qualification after an
 adversarial review reproduced wrong-span selection, non-atomic target writes,
 and config-free suggestion rendering. On 2026-07-26 the owner explicitly chose
 **Accept MEND 1** over that corrected receipt. Revision 81 closes `MEND-001` as
-`done`. Acceptance preserves this exact proof; it does not widen Mend into
-another mapping family, command, package, or product claim.
+`done`. Revision 82 source-integrates the accepted proof into `main` without
+shipping it. Acceptance preserves this exact proof; it does not widen Mend
+into another mapping family, command, package, or product claim.
 
 The earlier GIR proposal survives only as deterministic transformation logic
 inside this capability. It does not authorize a separate migrator product or
@@ -117,6 +118,6 @@ public rollback command is introduced by this proof.
 
 ## Next action
 
-Preserve the accepted exact proof. Reopen only for a demonstrated regression
-or a separately planned and explicitly owner-authorized repair family; do not
-infer expansion from this closeout.
+Preserve the accepted, source-integrated exact proof. Reopen only for a
+demonstrated regression or a separately planned and explicitly owner-authorized
+repair family; do not infer expansion from this closeout.

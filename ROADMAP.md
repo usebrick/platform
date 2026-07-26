@@ -151,6 +151,9 @@ is not differentiation.
 
 - Latest verified npm release: `slopbrick@0.43.0`.
 - Workspace candidate: unreleased `slopbrick@0.45.0`.
+- Qualified source checkpoint: `3170a90d592b9a2a471744a9523ced5e02eb6107`;
+  Revision 82 integrates that checkpoint into `main` as source only. The npm
+  package and website remain separately controlled public artifacts.
 - Published catalog: 103 rules in 22 generated categories.
 - Workspace catalog: 119 rules in 27 categories.
 - CAL-002: complete at Task 20 checkpoint `bd47dbd7e`.
@@ -219,9 +222,11 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
    decision and green local profile/parser receipt. Revision 70 separately
    authorized compiler/projection Slice B, Revision 71 records its green local
    receipt, Revision 72 authorized previews/exact-vector Slice C, and Revision
-   73 records the final local receipt. Revision 74 separately authorizes the
-   one local checkpoint commit; no push, merge, tag, release, publication, or
-   deployment follows from it. The result is deterministic local
+   73 records the final local receipt. Revision 74 separately authorized the
+   one local checkpoint commit and, by itself, no remote or public action.
+   Revision 82 later records the separately authorized source integration into
+   `main`; it does not authorize a tag, release, npm publication, website
+   deployment, or public capability claim. The result is deterministic local
    fixture conformance only; it does not establish agent efficacy, product
    demand, release qualification, or public availability. Any
    filesystem adapter or live outcome experiment requires a separate future
@@ -238,6 +243,8 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
    publication, failed-staging no-mutation, clean rescan, second-run no-op, and
    byte-identical rollback. Revision 81 records **Accept MEND 1** and closes the
    plan; do not infer targets or widen the proof into general refactoring.
+   Revision 82 source-integrates the accepted Lock and Mend proofs while
+   leaving both unshipped and without team or pricing evidence.
 3. Run `LABS-001` with fixed defects and blind source-only versus rendered
    evidence scoring. Stop if incremental value is not material.
 4. Run external sessions and test pricing only after separate participant
