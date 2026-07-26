@@ -101,7 +101,7 @@ describe('context/import-path-mismatch', () => {
     );
     expect(mapped[0].fix).toMatchObject({
       kind: 'module-specifier',
-      description: "Rewrite import '@/legacy/Button' to '@/components/ui/Button'",
+      description: 'Apply the exact repository-owned import rewrite',
       oldValue: '@/legacy/Button',
       newValue: '@/components/ui/Button',
     });
