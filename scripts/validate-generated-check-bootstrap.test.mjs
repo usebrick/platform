@@ -24,6 +24,7 @@ test('generated checks share one clean-checkout bootstrap contract', () => {
   assert.deepEqual(command.split(' && '), [
     'node --test scripts/validate-generated-check-bootstrap.test.mjs',
     'pnpm --filter @usebrick/core build',
+    'pnpm --filter @usebrick/engine build',
     'pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check',
     'pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-catalog.ts --check',
     'pnpm --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check',
