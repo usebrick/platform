@@ -12,10 +12,12 @@ central AI-slop detector, and user-acquisition front door. It finds visual,
 frontend, code, security, and repository-coherence problems that AI coding
 workflows amplify. It does not prove AI authorship.
 
-Memory is the planned repository-intelligence capability, Lock is the first
-paid new-debt workflow hypothesis, and Mend is the later deterministic repair
-capability. Pick/StackPick folds into `init` and policy authoring. Do not
-describe these capability names as separately shipped products or packages.
+Memory is the repository-intelligence capability with a private local M0,
+Lock is the first paid new-debt workflow hypothesis with one qualified local
+policy family, and Mend is the deterministic repair capability with one exact
+local import-rewrite proof pending owner disposition.
+Pick/StackPick folds into `init` and policy authoring. Do not describe these
+capability names or local proofs as separately shipped products or packages.
 
 Current version truth:
 

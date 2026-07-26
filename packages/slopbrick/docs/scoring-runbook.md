@@ -104,6 +104,23 @@ The explicit Lock option is narrower: it evaluates only exact new
 `allowedImports`. It also fails closed when policy authority is only a built-in
 default or the scan is incomplete.
 
+### Preview and apply the exact local repair proof
+
+The unreleased v0.45 workspace candidate can apply one repository-owned exact
+import replacement through the existing scanner:
+
+```bash
+npx slopbrick scan --rule context/import-path-mismatch --fix --dry-run
+npx slopbrick scan --rule context/import-path-mismatch --fix
+```
+
+`mend.importRewrites` must contain exactly one complete source-to-target entry,
+and the target must already match repository `allowedImports`. Dry-run and
+apply share the same parser-evidenced exact-span plan. A stale finding, changed
+source, unsafe literal, missing mapping, or disallowed target is not repaired.
+This is a locally qualified candidate path, not a public rollback interface,
+general refactoring authority, or a feature in verified public v0.43.0.
+
 ## Gate behavior
 
 ### Configured scan gate
@@ -177,9 +194,10 @@ documentation, database/business logic, patterns, PRs, and maintenance cost.
 These can expose categorical scores, sub-scores, or estimates, but they do not
 expand the four-field headline contract.
 
-Roadmap capability names do not add commands. In particular, Memory, Lock, and
-Mend remain sequencing boundaries until an implemented interface is reviewed;
-operators should use only the current SlopBrick runtime help and tests.
+Roadmap capability names do not add commands. Memory, Lock, and Mend remain
+sequencing boundaries rather than standalone products. The exact Mend proof
+uses the existing `scan --fix` options above; operators should use only current
+SlopBrick runtime help and tests and must not infer a new `mend` command.
 
 Use each command's runtime help and tests. Do not combine unrelated sub-scores
 into a new public composite in documentation.

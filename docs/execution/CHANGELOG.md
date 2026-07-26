@@ -3,6 +3,37 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 79 — 2026-07-26
+
+### MEND-001 exact repair local qualification
+
+- Completed the one owner-authorized exact import-rewrite path inside the
+  unreleased SlopBrick CLI. Strict single-entry `mend.importRewrites` authority,
+  an exact `context/import-path-mismatch` finding, parser evidence, source
+  snapshot binding, and an already-allowed target must all agree.
+- Added one shared exact-span planner for preview and apply, stale/overlap/
+  unsupported rejection, before/after byte hashes, receipt-verified apply and
+  rollback, no-write dry-run, clean rescan, and second-run no-op behavior.
+- Preserved CRLF bytes and unrelated duplicate text in the owner-controlled
+  CLI scenario. The first recursive attempt exposed a public-copy authority
+  defect; its RED/GREEN correction is included, and only the later captured
+  green qualification counts.
+- Passed the 240/240 focused MEND and documentation-authority matrix on Node
+  22.22.3 and 24.15.0, recursive typecheck/test/build, and a 308/308
+  package-local no-telemetry self-scan with no runtime failures and a passing
+  gate. Recursive tests record Core 289, Engine 150, Website 54, and SlopBrick
+  4,637 passed tests with 18 intentional SlopBrick skips; the production
+  high-severity audit reports no known vulnerabilities.
+- Kept `MEND-001` `in_progress` at implementation WIP `1/2` pending explicit
+  owner accept/revise/hold disposition over the completed receipt.
+
+### Boundary
+
+- No inferred or prefix replacement, second mapping family, dependency or file
+  move, general refactor, public rollback command, new package/umbrella CLI,
+  team claim, push, merge, tag, release, publication, or deployment is
+  authorized by this local proof.
+
 ## Revision 78 — 2026-07-26
 
 ### MEND-001 exact repair start

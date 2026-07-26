@@ -1,6 +1,6 @@
 # UseBrick roadmap
 
-**Updated:** 2026-07-25
+**Updated:** 2026-07-26
 **Execution status:** [docs/execution/STATUS.md](docs/execution/STATUS.md)
 
 ## Product thesis
@@ -46,7 +46,7 @@ and pricing scenarios live in the dated
 | **Memory capability** | M0 compiles four declared package facts; broader observed facts and approved intent remain post-M0 | Private M0 locally qualified; benchmark broader adapters before adding a store or package |
 | **Pick flow** | Initialize the Constitution, approved stack, and policy | Fold into onboarding and policy authoring |
 | **Lock capability** | Prevent newly introduced verified drift | One import-policy family is locally qualified in the unreleased CLI; first paid workflow remains a hypothesis |
-| **Mend capability** | Apply narrow deterministic repairs with proof and rollback | First exact import-rewrite proof in progress after owner acceptance of Lock |
+| **Mend capability** | Apply narrow deterministic repairs with proof and rollback | One exact import-rewrite proof is locally qualified and awaits owner disposition; no broader repair is authorized |
 | **RenderBrick Labs** | Test incremental value from rendered and runtime evidence | Benchmark only; stop if value is not material |
 | **Enterprise controls** | Shared policy, approvals, audit, and multi-repository governance | Build only after repeated paid-team demand |
 
@@ -232,8 +232,11 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
    incomplete-scan failure semantics in the unreleased CLI. Do not generalize
    it into team trust or a paid claim. On 2026-07-26 the owner accepted that
    bounded workflow as locally useful and selected one exact repository-owned
-   import rewrite for `MEND-001`; do not infer replacement targets or widen the
-   proof into general refactoring.
+   import rewrite for `MEND-001`. That implementation now passes its local
+   proof: strict authority, shared dry-run/apply planning, exact-span mutation,
+   clean rescan, second-run no-op, and byte-identical rollback. Keep the plan
+   open for owner disposition; do not infer targets or widen the proof into
+   general refactoring.
 3. Run `LABS-001` with fixed defects and blind source-only versus rendered
    evidence scoring. Stop if incremental value is not material.
 4. Run external sessions and test pricing only after separate participant
@@ -241,9 +244,10 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
 
 ## Current repair proof and later team governance
 
-- Prove exactly one source-to-target module-specifier mapping through the
-  existing scanner and fix path, with exact finding binding, dry-run/apply
-  parity, idempotent rescan, repository checks, and byte-identical rollback.
+- Preserve the locally qualified one source-to-target module-specifier mapping
+  through the existing scanner and fix path. It has exact finding binding,
+  dry-run/apply parity, idempotent rescan, repository checks, and byte-identical
+  rollback; owner accept/revise/hold disposition remains outstanding.
 - Consider token replacement, approved-component reuse, or other deterministic
   transforms only after this first proof closes and receives a separate owner
   disposition.

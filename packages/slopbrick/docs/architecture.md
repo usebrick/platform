@@ -6,7 +6,9 @@
 > front door. Memory, Lock, and Mend are internal capability and sequencing
 > names, not standalone products or packages. Current usage uses
 > `npx slopbrick ...`; this historical snapshot does not authorize a different
-> CLI. Repository-local history and endpoint-gated outbound reporting remain
+> CLI. One exact import-rewrite proof is locally qualified through the existing
+> `scan --fix` interface and awaits owner disposition; it is not general repair
+> or release authority. Repository-local history and endpoint-gated outbound reporting remain
 > separate. AI association is neither quality nor authorship authority; v10.1
 > is historical evidence and current v10.3 admission remains zero.
 >

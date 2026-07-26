@@ -2,9 +2,10 @@
 
 > **Current product boundary:** UseBrick is the sole customer-facing quality,
 > coherence, and verification product. SlopBrick is the shipped AI-slop
-> scanner, CLI, and evidence-producing front door. Memory, Lock, and Mend identify planned
-> capabilities and sequencing boundaries, not products, packages, or
-> authorization for new commands. See the [root roadmap](../ROADMAP.md) for
+> scanner, CLI, and evidence-producing front door. Memory, Lock, and Mend
+> identify capabilities and sequencing boundaries, not products, packages, or
+> authorization for new commands; bounded local proofs do not change that
+> boundary. See the [root roadmap](../ROADMAP.md) for
 > direction and the dated
 > [positioning research note](./research/usebrick-market-positioning-2026-07-19.md)
 > for volatile market evidence.

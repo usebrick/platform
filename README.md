@@ -23,7 +23,7 @@ hypothesis has not yet been collected.
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
 | **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C locally qualified, locally checkpointed, and unshipped; no new package, adapter, or store is authorized |
 | **Lock capability** | Prevent newly introduced verified drift with approved policy | One import-policy family is locally qualified in the unreleased v0.45 CLI; paid/team value remains unproven |
-| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | First owner-approved local proof is in progress for one exact import rewrite; no general refactoring authority |
+| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | One exact import-rewrite proof is locally implemented and qualified; owner disposition is pending and no general refactoring authority exists |
 | **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
 | **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
 
@@ -73,6 +73,16 @@ owned expiring waivers and decision evidence remain visible. This is one
 owner-controlled implementation proof, not a shipped paid feature or evidence
 of team demand. See the
 [Lock receipt](./docs/execution/evidence/LOCK-001-owner-validation.md).
+
+`MEND-001` now proves one exact repair inside the same unreleased CLI. A
+repository may declare one strict `mend.importRewrites` source-to-target entry;
+only an exact `context/import-path-mismatch` finding with matching parser
+evidence and an already-allowed target can reach the shared preview/apply
+planner. The local proof covers no-write dry-run, exact-span apply, clean
+rescan, second-run no-op, and byte-identical internal rollback. It does not
+infer replacements, expose a public rollback command, authorize another repair
+family, or establish shipped/team value. The owner still must accept, revise,
+or hold the [Mend receipt](./docs/execution/evidence/MEND-001-repair-proof.md).
 
 AI slop and repository memory solve different halves of one problem. Slop is
 the visible inconsistency; context loss is one major cause. Memory learns one
@@ -306,9 +316,10 @@ observe facts and runtime evidence
 ```
 
 Today, the `slopbrick` CLI and embedded MCP server implement the observation
-and evidence front door over `@usebrick/engine` and `@usebrick/core`. Memory and
-Lock have bounded local proofs, the first Mend proof is in progress, and Render
-Labs remains experimental as labeled above.
+and evidence front door over `@usebrick/engine` and `@usebrick/core`. Memory,
+Lock, and one exact Mend import-rewrite path have bounded local proofs; the
+Mend proof awaits owner disposition, and Render Labs remains experimental as
+labeled above.
 
 The long-term moat is the coherence graph connecting observed facts, approved
 intent, provenance and freshness, human outcomes, enforcement decisions,

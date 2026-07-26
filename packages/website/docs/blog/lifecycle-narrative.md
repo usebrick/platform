@@ -55,7 +55,7 @@ Most tools stop at Detect. Some go to Detect + Repair. The Prevent stage is what
 
 ### 4. Repair — the migrator
 
-**Repair** is the stage that closes the loop on existing violations. Once you've detected 10,000 `useState` calls in server components, you don't want to fix them by hand. The article called this planned boundary **MendBrick**. Under current authority, Mend is a parked capability for narrow, deterministic, reversible repairs with receipts; it does not ship today.
+**Repair** is the stage that closes the loop on existing violations. Once you've detected 10,000 `useState` calls in server components, you don't want to fix them by hand. The article called this planned boundary **MendBrick**. Under current authority, one exact import-rewrite path is locally qualified inside the unreleased SlopBrick CLI and awaits owner disposition. Mend still does not ship as a product, expose general refactoring, or authorize the historical broad migration example.
 
 Repair is also the stage where the lifecycle gets tested. A repair that introduces a new violation is worse than no repair. The verification step (run Detect after Repair, compare scores) is what makes Repair trustworthy.
 
@@ -85,7 +85,7 @@ These three changes are not features. They are evidence that the lifecycle is op
 | Detect | **SlopBrick** (the scanner) | Shipped as `slopbrick@0.20.0` when this article was written; the verified current public release is governed by the root roadmap and release receipt |
 | Preserve and compile | **MemoryBrick** | Planned repository-owned context capability; complete private M0 Slices A-C are locally qualified, locally checkpointed, and unshipped, proving only deterministic local fixture conformance with no source parser, store, or live agent |
 | Prevent | **LockBrick** (the CI gate) | One import-policy family locally qualified in the unreleased CLI; unshipped and not team-validated |
-| Repair | **MendBrick** (the migrator) | Parked pending trust and rollback proof |
+| Repair | **MendBrick** (the migrator) | One exact local import-rewrite proof qualified; owner disposition pending, broader repair gated |
 | Verify runtime | **Render Labs** | Benchmark-only Labs experiment; no browser or rendered-evidence product claim |
 
 At publication, only the Detect stage was described as productionized. That historical boundary still matters: the Constitution format already shipped inside SlopBrick, and the current unreleased candidate has one local Lock proof, but neither fact authorizes marketing each capability, creating another package, or claiming team demand.
@@ -108,6 +108,6 @@ If the tool you're using answers "no" to all three, you're using a point solutio
 
 - v0.21 (planned): the first changesets-driven release; Kotlin + Swift detection rules (DORMANT until corpus); `dup/identical-block` v2 with token shingling + MinHash + LSH banding.
 - v0.22 (planned): C++ detection; LockBrick CI gate spec; the first controlled-eval harness for `slop_suggest_with_structure` (proving agents actually conform, not just that rules are calibrated).
-- Historical long-term proposal: package PickBrick (Define) and MendBrick (Repair) independently. Current authority supersedes that packaging idea: Pick is onboarding and policy authoring, while Mend remains a parked capability inside UseBrick.
+- Historical long-term proposal: package PickBrick (Define) and MendBrick (Repair) independently. Current authority supersedes that packaging idea: Pick is onboarding and policy authoring, while Mend remains an internal capability with one exact local proof and no extraction authority.
 
 The lifecycle is the answer to "why is this more than a linter?" If you've ever watched a linter's findings pile up across releases — same warnings, same violations, same noise — the answer is that detection alone is a treadmill. The four-stage model is a compounding investment.

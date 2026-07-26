@@ -9,6 +9,15 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Added
 
+- Added one optional, strict, repository-owned `mend.importRewrites` mapping to
+  the unreleased candidate. Only an exact `context/import-path-mismatch`
+  finding whose parser evidence, source binding, configured source, and
+  already-allowed target agree can reach the shared exact-span preview/apply
+  planner. Focused proof covers no-write dry-run, deterministic apply, clean
+  rescan, no-op replay, stale/unsafe rejection, and byte-identical internal
+  rollback. This is one locally qualified proof pending owner disposition; it
+  is not a general Mend product, public rollback command, team-value result, or
+  release authorization.
 - Added the explicit, bounded `ci --lock-new-debt` candidate workflow for one
   repository-authorized policy family. It compares exact
   `context/import-path-mismatch` evidence with the reviewed durable debt

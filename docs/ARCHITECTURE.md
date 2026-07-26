@@ -1,6 +1,6 @@
 # UseBrick architecture
 
-**Updated:** 2026-07-25
+**Updated:** 2026-07-26
 **Status:** Current product and package reference
 
 UseBrick keeps AI-generated software coherent. It is the repository-owned
@@ -21,7 +21,7 @@ status and dependency edges live in
        observe -> preserve -> compile -> prevent -> repair -> verify
           │          │          │          │          │         │
       SlopBrick    policy     Memory      Lock       Mend      Render
-       shipped     authoring  M0 local   qualified  exact M0  Labs
+       shipped     authoring  M0 local   qualified  exact proof  Labs
 ```
 
 | Product or capability | Architectural role | Delivery boundary |
@@ -31,7 +31,7 @@ status and dependency edges live in
 | **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Private four-fact M0 locally qualified and unshipped; broader adapters/store remain gated |
 | **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
 | **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | One import-policy family locally qualified in the unreleased CLI; team and paid value remain unproven |
-| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is in local proof; no arbitrary repository-wide AI refactoring |
+| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is locally qualified and awaits owner disposition; no arbitrary repository-wide AI refactoring |
 | **RenderBrick Labs** | Compare source-only analysis with screenshots and runtime evidence | Draft benchmark only; not a browser product, package, or proven customer capability |
 
 The Memory capability is not vendor-owned chat history, a transcript archive,
@@ -84,6 +84,10 @@ the architectural moat.
   `publisher_attested` + `internal_analysis` for origin measurement and
   calibration evaluation; its labels are not witnessed authorship or quality.
 - Current v10.3 admission: zero admitted units.
+- Current Mend proof: one strict repository-owned module-specifier mapping is
+  locally qualified in the unreleased CLI with a shared exact-span
+  preview/apply plan, clean rescan, no-op replay, and byte-identical rollback;
+  it remains unaccepted, unshipped, and non-general.
 - Private Memory M0: complete local Slices A-C fixture-conformance proof;
   unshipped and unchanged Structure v5.
 - LOCK-001: complete local owner-only proof for explicit

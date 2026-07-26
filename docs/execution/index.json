@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 78,
+  "revision": 79,
   "updatedAt": "2026-07-26",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -376,8 +376,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Red-test strict repository-owned mend.importRewrites validation for one exact source-to-target module-specifier mapping before implementing repair behavior.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/config/mend-import-rewrites.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Review the locally qualified exact import-rewrite receipt and choose accept, revise with a reproducible issue, or hold; do not widen Mend before that disposition.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/config/mend-import-rewrites.test.ts tests/fix/import-rewrite.test.ts tests/fix/index.test.ts tests/rules/import-path-mismatch.test.ts tests/report/advice.test.ts tests/report/unified-diff.test.ts tests/cli/mend-import-rewrite.test.ts tests/rules/quality-authority-copy.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/MEND-001-repair-proof.md"
       },
       "evidence": [

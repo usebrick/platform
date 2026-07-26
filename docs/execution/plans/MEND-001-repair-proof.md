@@ -20,6 +20,12 @@ product boundary. On 2026-07-26 the owner selected option 1: accept the bounded
 import rewrite. This satisfies only the local resume gate. Team usefulness,
 demand, pricing, and release remain separate and unproven.
 
+The exact implementation and local technical qualification are now complete.
+`MEND-001` remains `in_progress` because the final acceptance criterion is an
+explicit owner disposition over the resulting receipt. Until then the proof
+may be inspected but not widened into another mapping family, command, package,
+or product claim.
+
 The earlier GIR proposal survives only as deterministic transformation logic
 inside this capability. It does not authorize a separate migrator product or
 arbitrary model-driven refactoring.
@@ -68,22 +74,26 @@ arbitrary model-driven refactoring.
 
 ## Execution steps
 
-1. Record the accepted exact repair and start boundary -> verify: execution
+1. **Complete:** record the accepted exact repair and start boundary ->
    Revision 78, this plan, and the evidence receipt agree.
-2. Red-test strict `mend.importRewrites` config admission -> verify: run the
-   focused config test with one worker.
-3. Red-test and implement the exact finding-bound span transformer -> verify:
-   dry-run/apply parity, stale and ambiguous rejection, and byte-for-byte
-   rollback tests pass with one worker.
-4. Exercise the existing CLI -> verify: dry-run leaves bytes unchanged, apply
-   changes only the selected span, rescan removes the intended finding, second
-   apply is a no-op, repository tests pass, and rollback restores original
-   bytes.
+2. **Complete:** red-test strict `mend.importRewrites` config admission -> the
+   config rejects absent authority, multiple mappings, disallowed targets, and
+   unsafe literal forms.
+3. **Complete:** red-test and implement the exact finding-bound span
+   transformer -> dry-run/apply parity, stale and ambiguous rejection,
+   source-snapshot authority, and byte-for-byte rollback pass.
+4. **Complete:** exercise the existing CLI -> dry-run leaves bytes unchanged,
+   apply changes only the selected span, rescan removes the intended finding,
+   and a second apply is a no-op.
+5. **Pending owner:** accept, revise with a named reproducible issue, or hold
+   the locally qualified proof without widening Mend.
 
 ## Verification
 
-The repair proof requires fixture hashes, dry-run/apply parity, idempotence,
-rescan, repository tests, and byte-identical rollback.
+The local proof passes fixture hashes, dry-run/apply parity, idempotence,
+rescan, repository tests, and byte-identical rollback. The final captured
+commands and counts live in the evidence receipt; local qualification is not
+release or team-use evidence.
 
 ## Evidence destination
 
@@ -96,6 +106,6 @@ repository checks and scan.
 
 ## Next action
 
-Write and checkpoint the failing strict-config contract before adding
-`mend.importRewrites` to runtime configuration. Do not implement the
-transformer while that contract is red.
+Review the completed local receipt and choose one disposition: accept and close
+this exact proof, revise with a named reproducible defect, or hold it as local
+evidence. Do not start another repair family before that decision.

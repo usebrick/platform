@@ -174,12 +174,17 @@ Current unreleased candidate:
 - the private Memory M0 proves only four declared facts and bounded previews;
 - `ci --lock-new-debt` applies reviewed repository `allowedImports` policy to
   exact new import findings, with owned expiring waivers and fail-closed scan
-  semantics.
+  semantics; and
+- one strict `mend.importRewrites` entry can repair that exact finding through
+  a shared exact-span preview/apply plan, clean rescan, no-op replay, and
+  byte-identical internal rollback. The local proof awaits owner disposition.
 
 Planned:
 
 - broader Memory provenance, freshness, scoped context, and agent adapters;
-- MendBrick later performs only trusted, deterministic, reversible repairs.
+- additional Mend repairs only after the first exact proof receives a separate
+  owner disposition and each new family proves trusted, deterministic,
+  reversible behavior.
 
 The accepted [`MEM-001` M0 ADR](../../../docs/decisions/memorybrick-m0.md)
 keeps this artifact contract unchanged. Revision 68's focused

@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-26
-**Index revision:** 78
+**Index revision:** 79
 **Global status:** `advancing`
 
 ## Executive state
@@ -46,6 +46,12 @@ Revision 78 records the owner's option 1 decision: the bounded local Lock
 workflow is accepted as useful for this owner-controlled proof, and `MEND-001`
 starts at implementation WIP `1/2` for one exact repository-owned import
 rewrite. This does not establish team usefulness or authorize broader repair.
+Revision 79 records the completed local implementation and qualification of
+that exact path. Strict config, exact finding/config authority, one shared
+preview/apply planner, no-write dry-run, exact-span apply, clean rescan,
+second-run no-op, and byte-identical rollback now pass. `MEND-001` remains
+`in_progress` at WIP `1/2` only because owner accept/revise/hold disposition is
+still outstanding; no second repair family may start automatically.
 Revision 74 records the owner's option `1` authorization for exactly one local
 checkpoint commit carrying this qualified byte set and synchronized docs.
 Push, merge, tag, release, publication, and deployment remain gated.
@@ -356,6 +362,20 @@ and the SlopBrick declaration build is warning-free. This is owner-only local
 evidence, not team precision, demand, pricing, release, or publication
 evidence.
 
+MEND-001 now adds one optional, strict, single-entry
+`mend.importRewrites` policy to the same unreleased CLI. A repair is eligible
+only when an exact `context/import-path-mismatch` finding, its parser evidence,
+its source snapshot binding, the configured source, and an already-allowed
+target all agree. Preview and apply consume one exact-span planner; the local
+proof preserves CRLF bytes, leaves duplicate text outside the import untouched,
+rescans without the intended finding, becomes a no-op on replay, and restores
+the original bytes from a verified internal receipt. Its nine-file focused
+matrix passes 240/240 on Node 22.22.3 and 24.15.0, and the current package-local
+self-scan analyzes 308/308 selected files with no runtime failure and a passing
+gate. This is a locally qualified proof pending owner disposition, not a
+shipped Mend product, public rollback command, generalized refactor, or
+team-value result.
+
 CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
 remain unchanged.
@@ -640,7 +660,7 @@ WIP while waiting.
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `done` | — | Preserve the qualified local v1 outcome contract and reopen only for regression or separately approved transport. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `done` | — | Preserve the owner-authorized local checkpoint and return before any push, merge, tag, release, publication, deployment, or broader Memory work. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `done` | — | Preserve the accepted local gate and hand only its exact import-policy finding contract to Mend. |
-| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `in_progress` | — | Red-test strict repository-owned exact import-rewrite config before implementation. |
+| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `in_progress` | — | Review the qualified exact import-rewrite receipt and choose accept, revise with a reproducible issue, or hold; do not widen Mend first. |
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | — | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
 | 14 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Preserve RUN-001 and repeat only when the owner selects another input. |
@@ -653,10 +673,11 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | PASS locally | Recursive typecheck, test, and build pass without the former Zod declaration warnings. Current counts are Core 289, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips. This does not authorize release. |
+| Current checkout gates | PASS locally | Recursive typecheck, test, and build pass without the former Zod declaration warnings. Current counts are Core 289, Engine 150, Website 54, and SlopBrick 4,637 with 18 intentional skips. This does not authorize release. |
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | LOCK-001 owner proof | PASS locally | One exact repository import-policy family passes the baseline/new/correction, waiver, policy-authority, and incomplete-scan matrix; external precision and team usefulness remain open. |
+| MEND-001 exact repair proof | PASS locally; owner disposition pending | One repository-owned import mapping passes strict authority, 240/240 focused checks on Node 22/24, preview/apply parity, exact-span mutation, clean rescan, no-op replay, byte-identical rollback, and a 308/308 package self-scan. No broader repair, release, or team claim follows. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
 | High-severity dependency audit | PASS locally | The current production audit checks 377 packages and reports zero advisories at the high threshold. Release still requires separate REL-001 authority. |
 | Public claims and metadata | Partially verified | The npm package remains v0.43.0. A read-only live-site check shows aligned copy, but deployed SHA is unknown and future public mutations remain under `REL-001`. |
@@ -721,8 +742,11 @@ implementation WIP is `1/2`.
 Revision 76 closes the bounded local Lock proof with its
 [owner receipt](evidence/LOCK-001-owner-validation.md). Revision 78 records the
 owner's option 1 acceptance and starts exactly one source-to-target import
-rewrite proof. The next implementation action is the red strict-config
-contract; no replacement may be inferred from `allowedImports`. Revision 69 records the
+rewrite proof. Revision 79 records that proof as locally implemented and
+qualified. The next action is owner accept/revise/hold disposition over the
+[exact receipt](evidence/MEND-001-repair-proof.md); no replacement may be
+inferred from `allowedImports`, and no additional repair may start first.
+Revision 69 records the
 green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
 complete private M0 local receipt. Revision 74 separately authorizes exactly
