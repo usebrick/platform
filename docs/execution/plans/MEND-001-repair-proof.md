@@ -1,6 +1,6 @@
 # MEND-001 — Prove the first deterministic reversible repair
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 11
 - **Track / lane:** implementation / mend
 - **Owner:** UseBrick platform
@@ -20,12 +20,12 @@ product boundary. On 2026-07-26 the owner selected option 1: accept the bounded
 import rewrite. This satisfies only the local resume gate. Team usefulness,
 demand, pricing, and release remain separate and unproven.
 
-The exact implementation and corrected local technical qualification are now
+The exact implementation and corrected local technical qualification are
 complete. Revision 80 supersedes Revision 79's qualification after an
 adversarial review reproduced wrong-span selection, non-atomic target writes,
-and config-free suggestion rendering. `MEND-001` remains `in_progress` because
-the final acceptance criterion is an explicit owner disposition over the
-corrected receipt. Until then the proof may be inspected but not widened into
+and config-free suggestion rendering. On 2026-07-26 the owner explicitly chose
+**Accept MEND 1** over that corrected receipt. Revision 81 closes `MEND-001` as
+`done`. Acceptance preserves this exact proof; it does not widen Mend into
 another mapping family, command, package, or product claim.
 
 The earlier GIR proposal survives only as deterministic transformation logic
@@ -93,8 +93,9 @@ arbitrary model-driven refactoring.
 5. **Complete:** exercise the existing CLI -> dry-run leaves bytes unchanged,
    apply changes only the selected span, rescan removes the intended finding,
    and a second apply is a no-op.
-6. **Pending owner:** accept, revise with a named reproducible issue, or hold
-   the locally qualified proof without widening Mend.
+6. **Complete:** owner accepted the corrected exact proof as **MEND 1** without
+   widening Mend -> Revision 81 closes the plan and returns implementation WIP
+   to `0/2`.
 
 ## Verification
 
@@ -116,6 +117,6 @@ public rollback command is introduced by this proof.
 
 ## Next action
 
-Review the completed local receipt and choose one disposition: accept and close
-this exact proof, revise with a named reproducible defect, or hold it as local
-evidence. Do not start another repair family before that decision.
+Preserve the accepted exact proof. Reopen only for a demonstrated regression
+or a separately planned and explicitly owner-authorized repair family; do not
+infer expansion from this closeout.

@@ -278,8 +278,9 @@ recheck. The local proof covers failed-staging no-mutation, mode preservation,
 clean rescan, no-op replay, and byte-identical internal rollback. The CLI does
 not expose rollback as a public command, does not infer a target from an
 allowed prefix, and does not authorize additional mapping families or general
-refactoring. The feature is not present in the verified public `0.43.0`
-release.
+refactoring. Revision 81 records owner acceptance of this exact local proof as
+MEND 1; any additional repair requires separate authority. The feature is not
+present in the verified public `0.43.0` release.
 
 ## MCP integration
 

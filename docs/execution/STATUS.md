@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-26
-**Index revision:** 80
+**Index revision:** 81
 **Global status:** `advancing`
 
 ## Executive state
@@ -52,9 +52,10 @@ text selection, direct target writes, and config-free suggestion rendering.
 Revision 80 corrects and requalifies the same exact path with a parser-owned
 module-source span, UTF-8-byte to UTF-16 offset conversion, staged atomic apply
 and rollback publication, and config-aware scan/suggest/watch previews.
-`MEND-001` remains `in_progress` at WIP `1/2` only because owner
-accept/revise/hold disposition is still outstanding; no second repair family
-may start automatically.
+Revision 81 records the owner's explicit **Accept MEND 1** disposition over the
+corrected receipt. `MEND-001` is `done` and implementation WIP returns to
+`0/2`. Acceptance preserves only this exact local proof; no second repair
+family may start automatically.
 Revision 74 records the owner's option `1` authorization for exactly one local
 checkpoint commit carrying this qualified byte set and synchronized docs.
 Push, merge, tag, release, publication, and deployment remain gated.
@@ -346,7 +347,8 @@ passed and 5 skipped files; Core, Website, and Engine pass 285, 54, and 60
 tests. Final TEL reviewers each returned 98/100 with no must-fix or should-fix
 finding. CAL-002, SB-UX-001, and TEL-001 are `done`; their closeout left
 implementation WIP at `0/2` before revision 47 started the MEM decision slice.
-Current implementation WIP is `1/2` after the owner-approved `MEND-001` start.
+Current implementation WIP is `0/2` after the owner accepted and closed
+`MEND-001` at Revision 81.
 
 LOCK-001 now adds one qualified, explicit `ci --lock-new-debt` workflow to the
 unreleased candidate. It blocks only exact new
@@ -378,9 +380,10 @@ preservation, quoted-decoy controls, clean rescan, no-op replay, failed-staging
 no-mutation, and byte-identical rollback now pass. The twelve-file focused
 matrix passes 306/306 on Node 22.22.3 and 24.15.0, and the current package-local
 self-scan analyzes 308/308 selected files with no runtime failure and a passing
-gate. This is a corrected locally qualified proof pending owner disposition,
-not a shipped Mend product, public rollback command, generalized refactor, or
-team-value result.
+gate. This corrected locally qualified proof is now owner-accepted as
+**MEND 1** and closed. It is not a shipped Mend product,
+public rollback command, generalized refactor, authorization for another
+repair family, or team-value result.
 
 CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
@@ -666,7 +669,7 @@ WIP while waiting.
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `done` | — | Preserve the qualified local v1 outcome contract and reopen only for regression or separately approved transport. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `done` | — | Preserve the owner-authorized local checkpoint and return before any push, merge, tag, release, publication, deployment, or broader Memory work. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `done` | — | Preserve the accepted local gate and hand only its exact import-policy finding contract to Mend. |
-| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `in_progress` | — | Review the Revision 80 corrected exact import-rewrite receipt and choose accept, revise with a reproducible issue, or hold; do not widen Mend first. |
+| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `done` | — | Preserve the owner-accepted Revision 80 exact import-rewrite proof; reopen only for regression or a separately authorized repair plan. |
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | — | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
 | 14 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Preserve RUN-001 and repeat only when the owner selects another input. |
@@ -683,7 +686,7 @@ WIP while waiting.
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | LOCK-001 owner proof | PASS locally | One exact repository import-policy family passes the baseline/new/correction, waiver, policy-authority, and incomplete-scan matrix; external precision and team usefulness remain open. |
-| MEND-001 exact repair proof | PASS locally after Revision 80 correction; owner disposition pending | One repository-owned import mapping passes strict authority, 306/306 focused checks on Node 22/24, parser-owned span selection, config-aware preview/apply parity, staged atomic publication, failed-staging no-mutation, clean rescan, no-op replay, byte-identical rollback, and a 308/308 package self-scan. No broader repair, release, or team claim follows. |
+| MEND-001 exact repair proof | ACCEPTED locally; closed at Revision 81 | One repository-owned import mapping passes strict authority, 306/306 focused checks on Node 22/24, parser-owned span selection, config-aware preview/apply parity, staged atomic publication, failed-staging no-mutation, clean rescan, no-op replay, byte-identical rollback, and a 308/308 package self-scan. Acceptance does not authorize broader repair, release, or team claims. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
 | High-severity dependency audit | PASS locally | The current production audit checks 377 packages and reports zero advisories at the high threshold. Release still requires separate REL-001 authority. |
 | Public claims and metadata | Partially verified | The npm package remains v0.43.0. A read-only live-site check shows aligned copy, but deployed SHA is unknown and future public mutations remain under `REL-001`. |
@@ -743,17 +746,16 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`MEM-001` and `LOCK-001` are `done`; `MEND-001` is `in_progress`, and
-implementation WIP is `1/2`.
+`MEM-001`, `LOCK-001`, and `MEND-001` are `done`; implementation WIP is `0/2`.
 Revision 76 closes the bounded local Lock proof with its
 [owner receipt](evidence/LOCK-001-owner-validation.md). Revision 78 records the
 owner's option 1 acceptance and starts exactly one source-to-target import
 rewrite proof. Revision 79 records the first implementation; Revision 80
 supersedes its qualification after correcting three reproduced review defects
-and requalifies the same boundary. The next action is owner
-accept/revise/hold disposition over the
-[corrected receipt](evidence/MEND-001-repair-proof.md); no replacement may be
-inferred from `allowedImports`, and no additional repair may start first.
+and requalifies the same boundary. Revision 81 records **Accept MEND 1** and
+closes the [corrected receipt](evidence/MEND-001-repair-proof.md). Preserve that
+exact proof; no replacement may be inferred from `allowedImports`, and no
+additional repair may start without a separate plan and explicit authority.
 Revision 69 records the
 green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the

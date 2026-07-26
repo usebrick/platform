@@ -178,15 +178,14 @@ Current unreleased candidate:
 - one strict `mend.importRewrites` entry can repair that exact finding through
   a parser-owned exact-span plan shared by config-aware preview/apply paths,
   staged atomic publication, failed-staging no-mutation, clean rescan, no-op
-  replay, and byte-identical internal rollback. The Revision 80 corrected local
-  proof awaits owner disposition.
+  replay, and byte-identical internal rollback. Revision 81 accepts and closes
+  the Revision 80 corrected local proof as MEND 1.
 
 Planned:
 
 - broader Memory provenance, freshness, scoped context, and agent adapters;
-- additional Mend repairs only after the first exact proof receives a separate
-  owner disposition and each new family proves trusted, deterministic,
-  reversible behavior.
+- additional Mend repairs only under a separate plan and owner authorization,
+  with each new family proving trusted, deterministic, reversible behavior.
 
 The accepted [`MEM-001` M0 ADR](../../../docs/decisions/memorybrick-m0.md)
 keeps this artifact contract unchanged. Revision 68's focused

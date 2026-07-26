@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 80,
+  "revision": 81,
   "updatedAt": "2026-07-26",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -362,7 +362,7 @@
       "track": "implementation",
       "lane": "mend",
       "horizon": "now",
-      "status": "in_progress",
+      "status": "done",
       "priority": 11,
       "path": "docs/execution/plans/MEND-001-repair-proof.md",
       "dependencies": {
@@ -376,7 +376,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Review the Revision 80 corrected and locally requalified exact import-rewrite receipt and choose accept, revise with a reproducible issue, or hold; do not widen Mend before that disposition.",
+        "text": "Preserve the owner-accepted Revision 80 exact import-rewrite proof and reopen Mend only for a demonstrated regression or a separately planned and explicitly authorized repair family.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/engine/dispatch.test.ts tests/engine/visitor.test.ts tests/engine/react-visitor.test.ts tests/config/mend-import-rewrites.test.ts tests/fix/import-rewrite.test.ts tests/fix/index.test.ts tests/rules/import-path-mismatch.test.ts tests/report/advice.test.ts tests/report/unified-diff.test.ts tests/cli/mend-import-rewrite.test.ts tests/rules/quality-authority-copy.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/MEND-001-repair-proof.md"
       },

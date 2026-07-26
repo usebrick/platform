@@ -31,7 +31,7 @@ status and dependency edges live in
 | **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Private four-fact M0 locally qualified and unshipped; broader adapters/store remain gated |
 | **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
 | **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | One import-policy family locally qualified in the unreleased CLI; team and paid value remain unproven |
-| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is corrected and locally requalified at Revision 80 and awaits owner disposition; no arbitrary repository-wide AI refactoring |
+| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is corrected, locally qualified, and owner-accepted as MEND 1; no arbitrary repository-wide AI refactoring |
 | **RenderBrick Labs** | Compare source-only analysis with screenshots and runtime evidence | Draft benchmark only; not a browser product, package, or proven customer capability |
 
 The Memory capability is not vendor-owned chat history, a transcript archive,
@@ -88,7 +88,8 @@ the architectural moat.
   corrected and locally requalified in the unreleased CLI with parser-owned
   source-span evidence, config-aware preview/apply parity, staged atomic
   publication, failed-staging no-mutation, clean rescan, no-op replay, and
-  byte-identical rollback; it remains unaccepted, unshipped, and non-general.
+  byte-identical rollback; Revision 81 accepts this exact proof, which remains
+  unshipped, scope-closed, and non-general.
 - Private Memory M0: complete local Slices A-C fixture-conformance proof;
   unshipped and unchanged Structure v5.
 - LOCK-001: complete local owner-only proof for explicit

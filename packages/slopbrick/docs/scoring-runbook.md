@@ -121,8 +121,9 @@ uses the resolved repository config. Apply and rollback stage bytes beside the
 target and publish by atomic rename after a stale-state recheck. A stale
 finding, changed source, escaped or unsafe literal, missing mapping, or
 disallowed target is not repaired. This is the Revision 80 corrected locally
-qualified candidate path, not a public rollback interface, general refactoring
-authority, or a feature in verified public v0.43.0.
+qualified candidate path, accepted as MEND 1 at Revision 81; it is not a public
+rollback interface, general refactoring authority, authorization for another
+repair family, or a feature in verified public v0.43.0.
 
 ## Gate behavior
 

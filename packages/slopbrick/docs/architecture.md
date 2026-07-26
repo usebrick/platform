@@ -8,8 +8,9 @@
 > `npx slopbrick ...`; this historical snapshot does not authorize a different
 > CLI. One exact import-rewrite proof is corrected and locally requalified at
 > Revision 80 through the existing scan/suggest/fix interfaces, with
-> parser-owned span evidence and staged atomic publication, and awaits owner
-> disposition; it is not general repair or release authority. Repository-local
+> parser-owned span evidence and staged atomic publication. Revision 81 accepts
+> this exact local proof as MEND 1; it is not general repair or release
+> authority. Repository-local
 > history and endpoint-gated outbound reporting remain
 > separate. AI association is neither quality nor authorship authority; v10.1
 > is historical evidence and current v10.3 admission remains zero.

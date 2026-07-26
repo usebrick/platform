@@ -18,9 +18,10 @@ current publisher-attested internal Corpus v1 evaluation path.
   Focused proof now covers config-aware no-write previews, staged atomic
   publication, failed-staging no-mutation, deterministic apply, mode
   preservation, clean rescan, no-op replay, stale/unsafe rejection, and
-  byte-identical internal rollback. This is one corrected locally qualified
-  proof pending owner disposition; it is not a general Mend product, public
-  rollback command, team-value result, or release authorization.
+  byte-identical internal rollback. Revision 81 records owner acceptance of
+  this corrected local proof as MEND 1; it is not a general Mend product,
+  public rollback command, team-value result, authorization for another repair
+  family, or release authorization.
 - Added the explicit, bounded `ci --lock-new-debt` candidate workflow for one
   repository-authorized policy family. It compares exact
   `context/import-path-mismatch` evidence with the reviewed durable debt

@@ -3,15 +3,17 @@
 - **Date started:** 2026-07-26
 - **Branch:** `codex/lock-001-new-debt`
 - **Workspace candidate:** unreleased `slopbrick@0.45.0`
-- **Disposition:** corrected and locally requalified; explicit owner
-  accept/revise/hold pending
+- **Disposition:** owner accepted as **MEND 1** on 2026-07-26; locally
+  qualified, unshipped, and scope-closed
 
 ## Owner decision
 
-The owner selected option 1 after reviewing the completed `LOCK-001` receipt:
-accept the bounded local import-policy gate as useful and evaluate one exact,
-repository-owned import rewrite. This authorizes local implementation and
-verification only.
+The owner first selected option 1 after reviewing the completed `LOCK-001`
+receipt: accept the bounded local import-policy gate as useful and evaluate one
+exact, repository-owned import rewrite. After Revision 80 corrected and
+requalified that implementation, the owner explicitly chose **Accept MEND 1**.
+This accepts the exact local proof and closes `MEND-001`; it does not authorize
+broader implementation or public action.
 
 ## Frozen repair boundary
 
@@ -116,6 +118,6 @@ does not expose rollback as a public command.
 ## Remaining boundary
 
 Push, merge, tag, npm publication, website deployment, broader Mend repairs,
-team usefulness, demand, and pricing remain unapproved and unproven. The owner
-must now choose accept, revise with a reproducible issue, or hold; technical
-qualification alone does not close the plan.
+team usefulness, demand, and pricing remain unapproved and unproven. Owner
+acceptance closes only this exact local proof. A second repair family requires
+a separate plan and explicit owner authority.

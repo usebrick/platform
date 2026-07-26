@@ -107,7 +107,7 @@ Premature splitting hurts more than it helps. Resist the urge to extract when:
 | `slopbrick` | Published CLI and embedded MCP server | Keep together while one release lifecycle and one owner are simpler |
 | Memory capability | Private M0 proof locally qualified; broader read-only context capability remains planned | A later live-outcome ADR proves value, the interface stabilizes, and two consumers need it independently |
 | Lock capability | One import-policy family locally qualified inside the unreleased `slopbrick` CLI; no separate package or team proof | Real use proves a separately versioned policy engine reduces coupling for two consumers |
-| Mend capability | One exact import-rewrite path corrected and locally requalified at Revision 80 inside `slopbrick`; owner disposition pending and no separate package/public rollback surface | Repeated trusted repairs produce a stable contract that two independent consumers need and can version separately |
+| Mend capability | One exact import-rewrite path corrected, locally qualified, and owner-accepted as MEND 1 inside `slopbrick`; no separate package/public rollback surface | Repeated separately authorized repairs produce a stable contract that two independent consumers need and can version separately |
 | RenderBrick Labs | Draft source-only versus rendered-evidence benchmark | Material benchmark value plus two real consumers and an approved runtime boundary ADR |
 | Standalone MCP | Not approved | Multiple clients need an independent lifecycle and the boundary has no CLI-internal assumptions |
 | Hosted team service / BRICK Cloud lineage | Parked business-model hypothesis | Repeated paid-team use requires shared history, approvals, and governance |

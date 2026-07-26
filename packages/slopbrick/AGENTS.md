@@ -15,8 +15,8 @@ workflows amplify. It does not prove AI authorship.
 Memory is the repository-intelligence capability with a private local M0,
 Lock is the first paid new-debt workflow hypothesis with one qualified local
 policy family, and Mend is the deterministic repair capability with one exact
-local import-rewrite proof corrected and requalified at Revision 80 pending
-owner disposition.
+local import-rewrite proof corrected, qualified, and owner-accepted as MEND 1
+at Revision 81.
 Pick/StackPick folds into `init` and policy authoring. Do not describe these
 capability names or local proofs as separately shipped products or packages.
 

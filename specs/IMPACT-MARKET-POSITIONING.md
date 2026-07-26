@@ -58,9 +58,9 @@ maps the affected work:
   result is deterministic local fixture conformance only, not market or
   efficacy evidence.
 - `LOCK-001`: first paid workflow hypothesis and new-debt enforcement proof.
-- `MEND-001`: one trusted deterministic import-rewrite proof is corrected and
-  locally requalified at Revision 80 and awaits owner disposition; broader
-  repair remains gated.
+- `MEND-001`: one trusted deterministic import-rewrite proof is corrected,
+  locally qualified, and owner-accepted as MEND 1 at Revision 81; broader
+  repair remains separately gated.
 - `ENT-001`: remains gated on repeated paid-team demand.
 - `REL-001`: npm and website authority remains unchanged.
 - `LABS-001`: visual and runtime judgment remains benchmark-only and advisory.

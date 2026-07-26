@@ -3,6 +3,29 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 81 — 2026-07-26
+
+### MEND-001 owner acceptance and closeout
+
+- Recorded the owner's explicit **Accept MEND 1** disposition over the
+  Revision 80 corrected receipt. The accepted boundary is exactly one
+  repository-owned `mend.importRewrites` source-to-target mapping through the
+  existing SlopBrick scan/suggest/fix surfaces.
+- Accepted parser-owned module-source span selection, config-aware preview and
+  apply parity, staged atomic source publication, failed-staging no-mutation,
+  mode preservation, clean rescan, no-op replay, and byte-identical internal
+  rollback as sufficient for this owner-controlled local proof.
+- Moved `MEND-001` from `in_progress` to `done` and returned implementation WIP
+  from `1/2` to `0/2`. Its next action is preservation, not automatic expansion.
+
+### Boundary
+
+- Acceptance establishes neither shipped availability nor team usefulness,
+  demand, pricing, general refactoring, another mapping family, or a public
+  rollback command. Any new Mend repair requires a separate plan and explicit
+  owner authority. Push, merge, tag, release, publication, and deployment
+  remain independently gated.
+
 ## Revision 80 — 2026-07-26
 
 ### MEND-001 adversarial correction and requalification
